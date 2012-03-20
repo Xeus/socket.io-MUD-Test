@@ -1,0 +1,53 @@
+<H1><%= mudName %></H1>
+
+<DIV ID="mudShell"></DIV>
+
+command<BR />
+<FORM NAME="mudForm" ID="mudForm">
+<INPUT type="text" name="mudCmd" id="mudCmd" />
+<INPUT type="submit" name="send" />
+</FORM>
+
+<script src="/socket.io/socket.io.js"></script>
+<script type="text/javascript">
+
+var cmd = "";
+var socket = io.connect('http://localhost:3000');
+var win = $("#mudShell");
+
+socket.on('connect', function() {
+	socket.on("serverSlogan", function (data) {
+ 		win.append("MotD:<BR />"+data);
+	});
+	socket.on("newTick", function (data) {
+		console.log("Received tick");
+ 		win.append("&lt;"+data.tickMsg+"&gt; ");
+	});
+	socket.on("message", function (data) {
+		win.append("<BR />" + data.msg);
+		win.animate({ scrollTop: win.prop("scrollHeight") - win.height() }, 0);
+	});
+	socket.on("newClient", function (data) {
+ 		console.log("A new client connected whose id is: "+data);
+	});
+});
+
+function setServerSlogan(newSlogan) {
+ socket.emit("setServerSlogan", newSlogan);
+}
+
+function sendCmd(cmd) {
+	socket.emit("sendCmd", { cmd: cmd });
+	console.log("New cmd sent from client: " + cmd);
+}
+
+$(document).ready(function() {
+	$("#mudForm").submit(function() {
+		var cmd = $("#mudCmd").val();
+		sendCmd(cmd);
+		$("#mudCmd").val('');
+		return false;
+	});
+});
+
+</script>

@@ -1,0 +1,5 @@
+Testing out socket.io by trying to make a mini-MUD (text-based game)
+via a web client.
+
+TODO:
+-scramble/translate messages based on linguist skills

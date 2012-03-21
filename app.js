@@ -20,30 +20,41 @@ var tickTime = 10000;
 
 var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-var scrambleMsg = function(msg) {
+scrambleMsg = function(msg) {
   var scrambledMsg = ""; 
   for (var i=0; i<msg.length; i++) {
-    scrambledMsg += possible.charAt(Math.floor(Math.random() * possible.length));
+    if (msg[i] == " ") {
+      scrambledMsg += " ";
+    }
+    else {
+      scrambledMsg += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
   }
   return scrambledMsg;
 };
 
-var translate = function(msg, origMsg) {
-  var translatedMsg = ""; 
+translate = function(msg, origMsg) {
+  console.log("msg: " + msg);
+  console.log("origMsg: " + origMsg);
+  translatedMsg = ""; 
   for (var i=0; i<msg.length; i++) {
-    if (Math.floor(Math.random() * train) > 2) {
+    if (Math.floor(Math.random() * skillTranslation) > 2) {
       translatedMsg += origMsg[i];
+      console.log("good");
     }
     else {
       translatedMsg += msg[i];
     }
   }
+  console.log("translatedMsg: " + translatedMsg);
+  console.log("skillTranslation: " + skillTranslation);
   return translatedMsg;
 };
 
-var skillTranslation = 0;
-var train = function(skill) {
-  return skill++;
+// TODO - push into Person class
+skillTranslation = 0;
+train = function(skill) {
+  skillTranslation++;
 };
 
 var io = require('socket.io').listen(app);
@@ -53,6 +64,7 @@ io.configure('production', function() {
 
 io.sockets.on('connection', function (socket) {
 
+  // TODO - make this only update on change
 	newTick = function() {
 		var tickMsg = "testing";
 		socket.emit("newTick", { tickMsg: tickMsg });
@@ -60,7 +72,7 @@ io.sockets.on('connection', function (socket) {
 		setTimeout(newTick, tickTime);
 	};
 
-	setTimeout(newTick, tickTime);
+	//setTimeout(newTick, tickTime);
 
 	socket.emit("serverSlogan", currentServerSlogan);
 	socket.broadcast.emit("newClient", socket.id);
@@ -80,6 +92,7 @@ io.sockets.on('connection', function (socket) {
  		console.log(timestamp);
  		var hours = timestamp.getHours();
     var minutes = timestamp.getMinutes();
+    var testGossip = /gossip /g;
     if (minutes < 10) {
     	minutes = "0" + minutes;
     }
@@ -87,9 +100,16 @@ io.sockets.on('connection', function (socket) {
    	if (command === "d" || command === "down") {
    		socket.emit("message", { msg: "[" + hours + ":" + minutes + "] User " + socket.id + " has headed " + command + "." });
     }
-    else if (/gossip /).test(command) {
+    else if (command === "train translation") {
+      train(skillTranslation);
+      socket.emit("message", { msg: "Your translation skill improves 1% to " + skillTranslation + "%!" });
+    }
+    else if (testGossip.test(command)) {
       var msg = command.substring(7,command.length);
-      socket.emit("message", { msg: "[" + hours + ":" + minutes + "] User " + socket.id + " gossips, \"" + scrambleMsg(msg); + "\"" });
+      var finishedScrambledMsg = scrambleMsg(msg);
+
+      socket.emit("message", { msg: "[" + hours + ":" + minutes + "] You gossip, \"" + msg + "\"" });
+      socket.broadcast.emit("message", { msg: "[" + hours + ":" + minutes + "] User " + socket.id + " gossips, \"" + translate(finishedScrambledMsg, msg) + "\"" });
    	}
    	//console.log(msg);
    	//socket.emit("message", msg);
